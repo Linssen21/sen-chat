@@ -5,6 +5,9 @@
 /.pnp
 .pnp.js
 
+# ignore a single file
+now.json
+
 # testing
 /coverage
 

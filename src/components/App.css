@@ -1,0 +1,66 @@
+html,
+body,
+.app {
+    height: 100vh;
+    background: #eee;
+    padding: 1em;
+}
+
+/* Messages.js */
+
+.messages{
+    height: 440px;
+    overflow-y: scroll;
+}
+
+/* SidePanel.js */
+.menu{
+    padding-bottom: 2em;
+    overflow-y: scroll;
+}
+
+/* MessageForm.js */
+
+.message-form {
+    position: fixed !important;
+    bottom: 1em;
+    margin-left: 320px !important;
+    left: 0;
+    right: 1em;
+    z-index: 200;
+}
+
+/* Message.jsx */
+.message-self{
+    border-left: 2px solid purple;
+    padding-left: 8px;
+}
+
+.message-image{
+    padding: 1em;
+}
+
+.progress-bar{
+    margin: 0.3em 0 0 0 !important;
+}
+
+/* ColorPanel */
+
+.color-container{
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    width: 35px;
+    border-radius: 3px;
+}
+
+.color-square{
+    widows: 35px;
+    height: 35px;
+}
+
+.color-overlay{
+    width: 85px;
+    height: 35px;
+    transform: rotate(225deg);
+}

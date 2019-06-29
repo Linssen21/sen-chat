@@ -6,6 +6,7 @@ import { setUserPosts } from '../../actions'
 import MessagesHeader from './MessagesHeader'
 import MessageForm from './MessageForm'
 import Message from './Message';
+import Typing from './Typing'
 
 
 
@@ -16,6 +17,8 @@ import Message from './Message';
       messagesRef: firebase.database().ref('messages'), //triggers when something change in the server
       privateMessagesRef: firebase.database().ref('privateMessages'),
       usersRef: firebase.database().ref('users'),
+      typingRef: firebase.database().ref('typing'),
+      connectedRef: firebase.database().ref('.info/connected'),
       messages: [],
       messagesLoading: true,
       channel: this.props.currentChannel,
@@ -25,6 +28,7 @@ import Message from './Message';
       searchLoading: false,
       searchResult: [],
       isChannelStarred: false,
+      typingUsers: []
     }
 
     componentDidMount() {
@@ -47,6 +51,7 @@ import Message from './Message';
     addListeners = channelId => {
         console.log(channelId)
         this.addMessageListener(channelId)
+        this.addTypingListeners(channelId)
     }
 
     // get all messages from firebase base on ChannelID
@@ -81,6 +86,45 @@ import Message from './Message';
                     this.setState({ isChannelStarred: prevStarred })
                 }
             })
+    }
+
+    addTypingListeners = channelId => {
+        // collect all the users
+        let typingUsers = [];
+        // listens to child added event
+        this.state.typingRef.child(channelId).on('child_added', snap => {
+            if(snap.key !== this.state.user.uid){
+                // add user if user is not current user
+                // adds id and name
+                typingUsers = typingUsers.concat({
+                    id: snap.key,
+                    name: snap.val()
+                });
+                this.setState({ typingUsers: typingUsers });
+            }
+        });
+
+        this.state.typingRef.child(channelId).on('child_removed', snap => {
+            const index = typingUsers.findIndex(user => user.id === snap.key);
+            if(index !== -1){
+                typingUsers = typingUsers.filter(user => user.id !== snap.key);
+                this.setState({ typingUsers: typingUsers })
+            }
+        });
+
+        this.state.connectedRef.on('value', snap => {
+            if(snap.val() === true){
+                this.state.typingRef
+                    .child(channelId)
+                    .child(this.state.user.uid)
+                    .onDisconnect()
+                    .remove(err => {
+                        if(err !== null ){
+                            console.error(err)
+                        }
+                    })
+            }
+        })
     }
 
     // Check if privateMessages
@@ -216,16 +260,24 @@ import Message from './Message';
                 .child(this.state.channel.id)
                 .remove(err => {
                     if(err !== null){
-                        console.log(err);
+                        console.error(err);
                     }
                 })
             console.log('unstar')
         }
     }
 
+    displayTypingUsers = users => (
+        users.length > 0 && users.map(user => (
+            <div style={{ display: "flex", alignItems: 'center', marginBottom: '0.2em' }} key={user.id}>
+                <span className="user-typing">{user.name} is typing</span> <Typing />
+            </div>
+        ))
+    )
+
     render() {
         
-        const { messagesRef, messages ,channel, user, numUniqueUsers, searchTerm, searchResult, searchLoading, privateChannel, isChannelStarred } = this.state;
+        const { messagesRef, messages ,channel, user, numUniqueUsers, searchTerm, searchResult, searchLoading, privateChannel, isChannelStarred, typingUsers } = this.state;
 
         return (
           <React.Fragment>
@@ -243,6 +295,7 @@ import Message from './Message';
                   <Comment.Group className="messages">
                       {/* Check if there is a searchTerm */}
                     {searchTerm ? this.displayMessages(searchResult) : this.displayMessages(messages)}
+                    {this.displayTypingUsers(typingUsers)}
                   </Comment.Group>
               </Segment>
 

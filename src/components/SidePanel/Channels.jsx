@@ -15,6 +15,7 @@ class Channels extends Component {
         modal: false,
         channelsRef: firebase.database().ref('channels'),
         messagesRef: firebase.database().ref('messages'),
+        typingRef: firebase.database().ref('typing'),
         notifcations: [],
         channelName: '',
         channelDetails: '',
@@ -187,6 +188,10 @@ class Channels extends Component {
       // an action use to set channel to global state
       changeChannel = channel => {
         this.setActiveChannel(channel);
+        this.state.typingRef
+            .child(this.state.channel.id)
+            .child(this.state.user.uid)
+            .remove()
         this.props.setCurrentChannel(channel);
         this.props.setPrivateChannel(false);
         this.clearNotifications();

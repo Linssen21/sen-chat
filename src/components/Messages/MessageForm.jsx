@@ -16,6 +16,7 @@ class MessageForm extends Component {
         privateChannel: this.props.isPrivateChannel,
         user: this.props.currentUser,
         storageRef: firebase.storage().ref(),
+        typingRef: firebase.database().ref('typing'),
         loading: false,
         errors: [],
         modal: false,
@@ -24,26 +25,48 @@ class MessageForm extends Component {
         percentUploaded: 0
     }
 
-    // componentDidMount(){
-    //     if(this.state.channel){
-    //         console.log("Channel ID", this.state.channel.id)
-    //     this.props.loadMessage(this.state.channel.id)
-    //     }
-    // }
+
 
     /**
-     * @param {event} event
+     * @param {event} event - message
      */
     handleChange = event => {
         this.setState({
             [event.target.name] : event.target.value
         })
     }
+    
+    /**
+     * this function triggers from onKeyDown Event 
+     * Creates a new document typing and store a child
+     * if message === null remove child
+     * @summary
+     * typing : {
+     *    channel.id : {
+     *        user.id : user.displayname
+     *    }
+     * }
+     */
+    handleKeyDown = () => {
+        const {message, typingRef, channel, user} = this.state;
+
+        if(message){
+            typingRef
+                .child(channel.id)
+                .child(user.uid)
+                .set(user.displayName)
+        }else{
+            typingRef
+            .child(channel.id)
+            .child(user.uid)
+            .remove()
+        }
+    }
 
     sendMessage = () => {
         // Triggers parent componentDidMount Re-rendering
         const { getMessagesRef } = this.props;
-        const { message, channel } = this.state
+        const { message, channel, user, typingRef } = this.state
         if(message){
             this.setState({
                 loading: true
@@ -56,14 +79,19 @@ class MessageForm extends Component {
                     this.setState({
                         loading: false,
                         message: '',
-                    })
+                        errors: []
+                    });
+                    typingRef
+                        .child(channel.id)
+                        .child(user.uid)
+                        .remove()
                 })
                 .catch(err => {
                     console.log(err)
                     this.setState({
                         loading: false,
                         errors: this.state.errors.concat(err)
-                    })
+                    });
                 })
         }else{
             // if there's no message
@@ -75,6 +103,14 @@ class MessageForm extends Component {
         }
     }
 
+    /**
+     * A function for creating a message
+     * @param {String} fileUrl
+     * @return { Object } message object
+     * 
+     * @example
+     *      createMessage("http://fileurl/")
+     */
     createMessage = (fileUrl = null) => {
         const message = {
             timestamp: firebase.database.ServerValue.TIMESTAMP,
@@ -95,6 +131,7 @@ class MessageForm extends Component {
         // returns a message either content or null together with its user
         return message
     }
+
 
     openModal = () => this.setState({ modal: true });
 
@@ -158,6 +195,7 @@ class MessageForm extends Component {
         })
     }
 
+   
     sendFileMessage = (fileUrl, ref, pathToUpload) => {
        
         ref.child(pathToUpload)
@@ -178,13 +216,16 @@ class MessageForm extends Component {
     }
 
     render(){
+       
         const { errors, message, loading, modal, uploadState, percentUploaded } = this.state
 
         return(
             <Segment className="message-form">
+               
                 <Input 
                     fluid
                     name="message"
+                    onKeyDown={this.handleKeyDown}
                     onChange={this.handleChange}
                     style={{ marginBottom: '0.7em' }}
                     label={<Button icon={'add'}/>}

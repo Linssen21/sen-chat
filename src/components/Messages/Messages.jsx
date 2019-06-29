@@ -6,7 +6,8 @@ import { setUserPosts } from '../../actions'
 import MessagesHeader from './MessagesHeader'
 import MessageForm from './MessageForm'
 import Message from './Message';
-import Typing from './Typing'
+import Typing from './Typing';
+import Skeleton from './Skeleton'
 
 
 
@@ -45,6 +46,17 @@ import Typing from './Typing'
         console.log("remove messagesRef")
         this.state.messagesRef.off()
         this.state.privateMessagesRef.off()
+    }
+
+    // Scrolls to bottom whenever the states update
+    componentDidUpdate(prevProps, prevState){
+        if(this.messagesEnd){
+            this.scrollToBottom();
+        }
+    }
+
+    scrollToBottom = () => {
+        this.messagesEnd.scrollIntoView({ behavior: 'smooth' });
     }
     
 
@@ -267,6 +279,10 @@ import Typing from './Typing'
         }
     }
 
+    /**
+     * @param {Array} users
+     * @summary Display if the user is typing
+     */
     displayTypingUsers = users => (
         users.length > 0 && users.map(user => (
             <div style={{ display: "flex", alignItems: 'center', marginBottom: '0.2em' }} key={user.id}>
@@ -275,9 +291,19 @@ import Typing from './Typing'
         ))
     )
 
+    displayMessageSkeleton = loading => (
+        loading ? (
+            <React.Fragment>
+                {[...Array(10)].map((_, index) => (
+                    <Skeleton key={index}/>
+                ))}
+            </React.Fragment>
+        ) : null
+    )
+
     render() {
         
-        const { messagesRef, messages ,channel, user, numUniqueUsers, searchTerm, searchResult, searchLoading, privateChannel, isChannelStarred, typingUsers } = this.state;
+        const { messagesRef, messages ,channel, user, numUniqueUsers, searchTerm, searchResult, searchLoading, privateChannel, isChannelStarred, typingUsers, messagesLoading } = this.state;
 
         return (
           <React.Fragment>
@@ -293,9 +319,11 @@ import Typing from './Typing'
 
               <Segment>
                   <Comment.Group className="messages">
+                    {this.displayMessageSkeleton(messagesLoading)}
                       {/* Check if there is a searchTerm */}
                     {searchTerm ? this.displayMessages(searchResult) : this.displayMessages(messages)}
                     {this.displayTypingUsers(typingUsers)}
+                    <div ref={node => (this.messagesEnd = node)}></div>
                   </Comment.Group>
               </Segment>
 

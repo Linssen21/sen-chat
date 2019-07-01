@@ -8,6 +8,12 @@
 # ignore a single file
 now.json
 
+# ignore firebase configs
+firebase.json
+.firebaserc
+database.rules.json
+storage.rules
+
 # testing
 /coverage
 

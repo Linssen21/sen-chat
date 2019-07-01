@@ -36,6 +36,14 @@ import { setColors } from '../../actions'
                 })
             });
     }
+    
+    componentWillUnmount(){
+        this.reomoveListener();
+    }
+
+    reomoveListener = () => {
+        this.state.usersRef.child(`${this.state.user.uid}/colors`).off();
+    }
 
     openModal = () => this.setState({ modal: true });
     closeModal = () => this.setState({ modal: false });

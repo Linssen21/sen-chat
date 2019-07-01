@@ -28,7 +28,12 @@ class MessageForm extends Component {
         emojiPicker: false,
     }
 
-
+    componentWillUnmount(){
+        if(this.state.uploadTask !== null){
+            this.state.uploadTask.cancel();
+            this.setState({ uploadTask: null })
+        }
+    }
 
     /**
      * @param {event} event - message
@@ -112,7 +117,10 @@ class MessageForm extends Component {
         });
       };
 
+
+    // Stores to message / private message
     sendMessage = () => {
+        
         // Triggers parent componentDidMount Re-rendering
         const { getMessagesRef } = this.props;
         const { message, channel, user, typingRef } = this.state
@@ -159,6 +167,8 @@ class MessageForm extends Component {
      * 
      * @example
      *      createMessage("http://fileurl/")
+     * 
+     * @returns Image/Content
      */
     createMessage = (fileUrl = null) => {
         const message = {
@@ -188,17 +198,18 @@ class MessageForm extends Component {
 
     getPath = () => {
         if(this.props.isPrivateChannel){
-            return `chat/private-${this.state.channel.id}`;
+            console.log("Private Channel");
+            return `chat/private/${this.state.channel.id}`;
         }else{
             return 'chat/public';
         }
     }
-
-    // Uploads a file/image
+    
+    // 1. Uploads a file/image
     uploadFile = (file, metadata) => {
         console.log(file, metadata)
         const pathToUpload = this.state.channel.id
-        const ref = this.props.messagesRef;
+        const ref = this.props.getMessagesRef();
         const filePath = `${this.getPath()}/${uuidv4()}.jpg`;
 
         // const req = new XMLHttpRequest();
@@ -244,7 +255,7 @@ class MessageForm extends Component {
         })
     }
 
-   
+    // 2. Send File Message to private / public messages
     sendFileMessage = (fileUrl, ref, pathToUpload) => {
        
         ref.child(pathToUpload)
@@ -267,7 +278,7 @@ class MessageForm extends Component {
     render(){
        
         const { errors, message, loading, modal, uploadState, percentUploaded, emojiPicker } = this.state
-
+        console.log(this.state.privateChannel);
         return(
             <Segment className="message-form">
                {emojiPicker && (

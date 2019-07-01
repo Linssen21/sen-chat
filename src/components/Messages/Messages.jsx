@@ -29,14 +29,16 @@ import Skeleton from './Skeleton'
       searchLoading: false,
       searchResult: [],
       isChannelStarred: false,
-      typingUsers: []
+      typingUsers: [],
+      listeners: [] // Collects all firebase refs
     }
 
     componentDidMount() {
-        const { channel, user } = this.state
-        console.log("channel", channel)
+        const { channel, user, listeners } = this.state
+        // console.log("channel", channel)
         if(channel && user){
             console.log("channelID", channel.id)
+            this.removeListeners(listeners);
             this.addListeners(channel.id)
             this.addUserStarsListeners(channel.id, user.uid)
         }
@@ -44,8 +46,28 @@ import Skeleton from './Skeleton'
 
     componentWillUnmount(){
         console.log("remove messagesRef")
-        this.state.messagesRef.off()
-        this.state.privateMessagesRef.off()
+      this.removeListeners(this.state.listeners);
+      this.state.connectedRef.off();
+    }
+
+    addToListeners = (id, ref, event) => {
+        const index = this.state.listeners.findIndex(listener => {
+            return listener.id === id && listener.ref === ref && listener.event === event;
+        })
+        if(index === -1){
+            const newListener = {id, ref, event};
+            this.setState({ listeners: this.state.listeners.concat(newListener) });
+        }
+    }
+
+    /**
+     * @param {Array} listeners
+     * @summary get the this.state.listeners, set all listeners to off
+     */
+    removeListeners = listeners => {
+        listeners.forEach(listener => {
+            listener.ref.child(listener.id).off(listener.event);
+        });
     }
 
     // Scrolls to bottom whenever the states update
@@ -55,6 +77,9 @@ import Skeleton from './Skeleton'
         }
     }
 
+    /**
+     * @summary document.querySelector(.messages).scrollIntoView
+     */
     scrollToBottom = () => {
         this.messagesEnd.scrollIntoView({ behavior: 'smooth' });
     }
@@ -81,7 +106,8 @@ import Skeleton from './Skeleton'
             this.countUniqueUsers(loadedMessages);
             this.countUserPosts(loadedMessages);
             // console.log(loadedMessages)
-        })
+        });
+        this.addToListeners(channelId, ref, 'child_added')
     }
 
     addUserStarsListeners = (channelId, userId) => {
@@ -116,6 +142,8 @@ import Skeleton from './Skeleton'
             }
         });
 
+        this.addToListeners(channelId, this.state.typingRef, 'child_added');
+
         this.state.typingRef.child(channelId).on('child_removed', snap => {
             const index = typingUsers.findIndex(user => user.id === snap.key);
             if(index !== -1){
@@ -123,6 +151,8 @@ import Skeleton from './Skeleton'
                 this.setState({ typingUsers: typingUsers })
             }
         });
+
+        this.addToListeners(channelId, this.state.typingRef, 'child_removed');
 
         this.state.connectedRef.on('value', snap => {
             if(snap.val() === true){
@@ -136,7 +166,9 @@ import Skeleton from './Skeleton'
                         }
                     })
             }
-        })
+        });
+
+        
     }
 
     // Check if privateMessages

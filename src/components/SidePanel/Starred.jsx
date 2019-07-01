@@ -20,6 +20,14 @@ class Starred extends Component {
        
     }
 
+    componentWillUnmount(){
+        this.removeListener();
+    }
+
+    removeListener = () => {
+        this.state.usersRef.child(`${this.state.user.uid}/starred`).off();
+    }
+
     addListeners = userId => {
          // This event will be triggered once every time a child is added.
         this.state.usersRef

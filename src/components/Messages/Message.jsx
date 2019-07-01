@@ -21,7 +21,7 @@ const Message = ({ message, user }) => (
            <Comment.Author as="a">{ message.user.name }</Comment.Author>
            <Comment.Metadata>{ timefromNow(message.timestamp) }</Comment.Metadata>
           
-           {/* Check if theres an image */}
+           {/* Check if theres an image */ console.log(message)}
            {isImage(message) ? <Image src={message.image} className="message-image" /> : 
          <Comment.Text>{ message.content }</Comment.Text>}
         </Comment.Content>
